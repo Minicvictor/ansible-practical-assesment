@@ -1,0 +1,44 @@
+# 1. Ping every host in your inventory and confirm all respond
+ansible -i inventory all -m ping
+
+# 2. Using the command module, print the current date/time on every host in the web group
+ansible -i inventory web -m command -a "date"
+
+# 3. Using the shell module, find out how much free disk space is available on / for every host in datacenter
+ansible -i inventory datacenter -m shell -a "df -h / | grep -v Filesystem"
+
+# 4. Using the setup module, print only the total memory (ansible_memtotal_mb) fact for every host
+ansible -i inventory all -m setup -a "filter=ansible_memtotal_mb"
+
+# 5a. Using the package module and privilege escalation, install htop on every host in datacenter. Run it once
+ansible -i inventory datacenter -b -m package -a "name=htop state=present"
+
+# 5b. Run the exact same command again - should show changed=0
+ansible -i inventory datacenter -b -m package -a "name=htop state=present"
+
+# 6. Using the service module, ensure the SSH service is both started and enabled on boot, on every host
+ansible -i inventory all -b -m service -a "name=ssh state=started enabled=yes"
+
+# 7. Using the copy module, create a file at /tmp/hello.txt on every host in web containing the text Hello from Ansible
+ansible -i inventory web -b -m copy -a 'content="Hello from Ansible" dest=/tmp/hello.txt'
+
+# 8. Using the file module, create a directory at /tmp/ansible_test with permissions 0755 on every host
+ansible -i inventory all -b -m file -a "path=/tmp/ansible_test state=directory mode=0755"
+
+# 9. Using the user module, create a user called deployer on the db host only, with a home directory but no login shell
+ansible -i inventory db --limit db -b -m user -a "name=deployer state=present shell=/usr/sbin/nologin create_home=yes"
+
+# 10. Using the lineinfile module, add the line # Managed by Ansible to the end of /etc/motd on every host, only if the line doesn't already exist
+ansible -i inventory all -b -m lineinfile -a "path=/etc/motd line='# Managed by Ansible' state=present"
+
+# 11. Run any command from this list against only the host(s) matching an ad-hoc pattern rather than a group name - all hosts whose name starts with node
+ansible -i inventory node* -m ping
+
+# 12. Use -f to run the ping command from item 1 with parallel forks
+ansible -i inventory all -f 10 -m ping
+# 'forks' controls the maximum number of hosts Ansible connects to and runs a task on
+# simultaneously (its process concurrency level), rather than running strictly one host
+# at a time. The default is 5. As inventory size grows into the hundreds or thousands of
+# hosts, running serially would make playbook runs take impractically long, so increasing
+# forks lets Ansible batch more SSH connections/tasks in parallel, trading higher CPU/
+# memory/network load on the control node for much faster overall run time.
