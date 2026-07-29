@@ -1,0 +1,10 @@
+1. UNREACHABLE — three root causes and how to check each:
+a) Wrong or missing SSH key path/permissions. Check with ls -la /path/to/key.pem to confirm it exists, and chmod 400 key.pem if permissions are too open for SSH to accept.
+b) Network-level unreachability (wrong IP, stopped instance, security group blocking port 22). Check with ping <host_ip> or nc -zv <host_ip> 22, and confirm the instance is running with SSH allowed from your IP.
+c) Wrong SSH username for the AMI (e.g. ec2-user on Ubuntu, which expects ubuntu). Check by manually testing ssh -i key.pem ubuntu@<ip> vs ssh -i key.pem ec2-user@<ip>.
+
+2. command vs shell module:
+The command module runs a binary directly without invoking a shell, so it doesn’t support pipes, redirection, env var expansion, or chaining. The shell module runs through /bin/sh, so it supports all of that. Example that only works in shell: df -h / | grep -v Filesystem — the pipe needs a shell to interpret it.
+
+3. changed vs ok:
+Ansible reports “changed” when a task actually altered system state, and “ok” when the system was already in the desired state. This works because well-written modules are idempotent — they check current state against desired state first, and only act if there’s a real difference. That’s why re-running the htop install reports changed=0.
